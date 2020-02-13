@@ -4,6 +4,7 @@ version = "0.1.0"
 authors = ["Olivier Le Moal <mail@olivierlemoal.fr>"]
 edition = "2018"
 license = "MIT"
+readme = "README.md"
 repository = "https://github.com/olivierlemoal/milenage-rs/"
 description = "MILENAGE Algorithm Set"
 keywords = ["telecom", "lte", "eutran", "epc", "security"]
