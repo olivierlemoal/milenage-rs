@@ -1,4 +1,7 @@
 # Milenage-rs
+[![crates.io](https://img.shields.io/crates/v/milenage)](https://github.com/olivierlemoal/milenage-rs/)
+![Rust](https://github.com/olivierlemoal/milenage-rs/workflows/Rust/badge.svg)
+[![GitHub](https://img.shields.io/github/license/mashape/apistatus.svg)](https://github.com/olivierlemoal/milenage-rs/blob/master/LICENSE)
 
 MILENAGE authentication algorithm as proposed by ETSI SAGE for 3G authentication.
 
