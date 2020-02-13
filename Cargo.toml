@@ -3,6 +3,11 @@ name = "milenage"
 version = "0.1.0"
 authors = ["Olivier Le Moal <mail@olivierlemoal.fr>"]
 edition = "2018"
+license = "MIT"
+repository = "https://github.com/olivierlemoal/milenage-rs/"
+description = "MILENAGE Algorithm Set"
+keywords = ["telecom", "lte", "eutran", "epc", "security"]
+categories = ["authentication", "cryptography"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
