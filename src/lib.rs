@@ -32,15 +32,14 @@
 //!
 //! ```
 
-#[cfg_attr(test, macro_use)] 
-extern crate hex_literal;
 extern crate aes_soft as aes;
 extern crate block_modes;
+#[cfg_attr(test, macro_use)]
+extern crate hex_literal;
 
 use aes::block_cipher_trait::generic_array::GenericArray;
 use aes::block_cipher_trait::BlockCipher;
 use aes::Aes128;
-
 
 /// xor two 16 bytes array
 fn xor(a1: &[u8; 16], a2: &[u8; 16]) -> [u8; 16] {
@@ -100,8 +99,6 @@ impl Milenage {
     /// F1 computes network authentication code MAC-A from key K, random challenge RAND,
     /// sequence number SQN and authentication management field AMF.
     pub fn f1(&mut self, rand: &[u8; 16], sqn: &[u8; 6], amf: &[u8; 2]) -> [u8; 8] {
-
-
         let mac = self.f1base(rand, sqn, amf);
         let mut maca = [0u8; 8];
         maca.copy_from_slice(&mac[..8]);
@@ -159,8 +156,6 @@ impl Milenage {
     /// F2345 takes key K and random challenge RAND, and returns response RES,
     /// confidentiality key CK, integrity key IK and anonymity key AK.
     pub fn f2345(&mut self, rand: &[u8; 16]) -> ([u8; 8], [u8; 16], [u8; 16], [u8; 6]) {
-
-
         let rijndael_input = xor(&self.opc, rand);
         let temp = self.rijndael_encrypt(&rijndael_input);
 
@@ -184,7 +179,7 @@ impl Milenage {
 
         let mut rijndael_input = [0u8; 16];
         for i in 0..16 {
-            rijndael_input[(i+12)%16] = temp[i] ^ self.opc[i]
+            rijndael_input[(i + 12) % 16] = temp[i] ^ self.opc[i]
         }
         rijndael_input[15] ^= 2;
 
@@ -196,11 +191,11 @@ impl Milenage {
 
         let mut rijndael_input = [0u8; 16];
         for i in 0..16 {
-            rijndael_input[(i+8)%16] = temp[i] ^ self.opc[i]
+            rijndael_input[(i + 8) % 16] = temp[i] ^ self.opc[i]
         }
         rijndael_input[15] ^= 4;
 
-        let out= self.rijndael_encrypt(&rijndael_input);
+        let out = self.rijndael_encrypt(&rijndael_input);
         let ik = xor(&out, &self.opc);
 
         self.res = Some(res);
@@ -213,8 +208,6 @@ impl Milenage {
     /// F5Star is the anonymity key derivation function for the re-synchronisation message.
     /// F5Star takes key K and random challenge RAND, and returns resynch anonymity key AK.
     pub fn f5star(&mut self, rand: &[u8; 16]) -> [u8; 6] {
-
-
         let mut rijndael_input = xor(&self.opc, rand);
         let temp = self.rijndael_encrypt(&rijndael_input);
 
