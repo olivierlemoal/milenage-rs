@@ -37,8 +37,8 @@ extern crate block_modes;
 #[cfg_attr(test, macro_use)]
 extern crate hex_literal;
 
-use aes::block_cipher_trait::generic_array::GenericArray;
-use aes::block_cipher_trait::BlockCipher;
+use aes::cipher::generic_array::GenericArray;
+use aes::cipher::BlockCipher;
 use aes::Aes128;
 
 /// xor two 16 bytes array
@@ -241,6 +241,8 @@ impl Milenage {
     }
 
     fn rijndael_encrypt(&self, input: &[u8; 16]) -> [u8; 16] {
+        use crate::aes::cipher::NewBlockCipher;
+
         let key = GenericArray::from_slice(&self.k);
         let cipher = Aes128::new(key);
         let mut block = GenericArray::clone_from_slice(input);
