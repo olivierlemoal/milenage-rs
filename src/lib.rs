@@ -40,6 +40,8 @@ extern crate hex_literal;
 use aes::cipher::generic_array::GenericArray;
 use aes::cipher::BlockCipher;
 use aes::Aes128;
+use sha2::Sha256;
+use hmac::{Hmac, Mac, NewMac};
 
 /// xor two 16 bytes array
 fn xor(a1: &[u8; 16], a2: &[u8; 16]) -> [u8; 16] {
@@ -72,6 +74,8 @@ pub struct Milenage {
     pub opc: [u8; 16],
     /// RES is a 64-bit signed response that is the output of the function f2.
     pub res: Option<[u8; 8]>,
+    /// RES* is a 128-bit response that is used in 5G.
+    pub res_star: Option<[u8; 16]>,
 }
 
 impl Milenage {
@@ -230,6 +234,56 @@ impl Milenage {
         ak
     }
 
+    /// Computes RESStar from serving network name, RAND and RES as described in
+    /// A.4 RES* and XRES* derivation function, TS 33.501.
+    pub fn compute_res_star(&mut self, mcc: &str, mnc: &str, rand: &[u8; 16], res: &[u8; 8]) -> Result<[u8; 16], String> {
+        let mut n: String = "".to_string();
+        if mnc.len() == 2 {
+            n = format!("{}{}", "0", mnc);
+        } else if mnc.len() != 3 {
+            return Err(format!("invalid MNC: {}", mnc));
+        };
+
+        if mcc.len() != 3 {
+            return Err(format!("invalid MCC: {}", mcc));
+        };
+
+        let snn = format!("5G:mnc{}.mcc{}.3gppnetwork.org", n, mcc);
+
+        let mut data = [0u8; 63];
+        data[0] = 0x6bu8;
+
+        data[1..33].copy_from_slice(&snn.as_bytes());
+        data[33..35].copy_from_slice(&[0x00u8, 0x20u8]);
+
+        data[35..51].copy_from_slice(rand);
+        data[51..53].copy_from_slice(&[0x00u8, 0x10u8]);
+
+        data[53..61].copy_from_slice(res);
+        data[61..63].copy_from_slice(&[0x00u8, 0x08u8]);
+
+        let mut k = [0u8; 32];
+        if self.ck.is_none() {
+            return Err("missing CK, run f2345() before compute_res_star()".to_string());
+        };
+        if self.ik.is_none() {
+            return Err("missing IK, run f2345() before compute_res_star()".to_string());
+        };
+        k[0..16].copy_from_slice(&self.ck.unwrap());
+        k[16..32].copy_from_slice(&self.ik.unwrap());
+
+        type HmacSha256 = Hmac<Sha256>;
+        let mut mac = HmacSha256::new_varkey(&k)
+            .expect("HMAC can take key of any size");
+        mac.update(&data);
+        let result = mac.finalize().into_bytes();
+
+        let mut res_star = [0u8; 16];
+        res_star.copy_from_slice(&result[16..32]);
+        self.res_star = Some(res_star);
+        return Ok(res_star)
+    }
+
     /// Derive OP with K to produce OPc
     fn compute_opc(&mut self) {
         let op = match self.op {
@@ -312,5 +366,18 @@ mod tests {
         let op = hex!("cdc202d5123e20f62b6d676ac72cb318");
         let m = Milenage::new_with_op(k, op);
         assert_eq!(m.opc, hex!("cd63cb71954a9f4e48a5994e37a02baf"));
+    }
+
+    #[test]
+    fn test_compute_res_star() {
+        let k = hex!("465b5ce8b199b49faa5f0a2ee238a6bc");
+        let op = hex!("cdc202d5123e20f62b6d676ac72cb318");
+        let rand = hex!("23553cbe9637a89d218ae64dae47bf35");
+        let mut m = Milenage::new_with_op(k, op);
+        let (res, _, _, _) = m.f2345(&rand);
+        match m.compute_res_star("001", "01", &rand, &res) {
+            Ok(res_star) => assert_eq!(res_star, hex!("f236a7417272bfb2d66d4d670733b527")),
+            Err(e) => panic!(e),
+        };
     }
 }
