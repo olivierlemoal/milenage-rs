@@ -405,7 +405,7 @@ mod tests {
         let (res, _, _, _) = m.f2345(&rand);
         match m.compute_res_star("001", "01", &rand, &res) {
             Ok(res_star) => assert_eq!(res_star, hex!("f236a7417272bfb2d66d4d670733b527")),
-            Err(e) => panic!(e),
+            Err(e) => panic!("{}", e),
         };
     }
 }
