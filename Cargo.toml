@@ -1,6 +1,6 @@
 [package]
 name = "milenage"
-version = "0.1.3"
+version = "0.1.4"
 authors = ["Olivier Le Moal <mail@olivierlemoal.fr>"]
 edition = "2018"
 license = "MIT"
