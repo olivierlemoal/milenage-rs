@@ -21,7 +21,7 @@
 //!
 //!        let mut m = Milenage::new_with_op(k, op);
 //!        let (res, ck, ik, ak) = m.f2345(&rand);
-//!        
+//!
 //!        assert_eq!(m.res.unwrap(), hex!("a54211d5e3ba50bf"));
 //!        // or
 //!        assert_eq!(res, hex!("a54211d5e3ba50bf"));
@@ -32,14 +32,30 @@
 //!
 //! ```
 
-extern crate aes_soft as aes;
-extern crate block_modes;
+#[cfg(all(feature = "aes", feature = "openssl"))]
+compile_error!("feature \"aes\" and feature \"openssl\" cannot be enabled at the same time");
+
 #[cfg_attr(test, macro_use)]
 extern crate hex_literal;
 
-use aes::cipher::generic_array::GenericArray;
-use aes::cipher::BlockCipher;
-use aes::Aes128;
+#[cfg(feature = "aes")]
+extern crate aes_soft as aes;
+#[cfg(feature = "aes")]
+extern crate block_modes;
+
+#[cfg(feature = "aes")]
+use {
+    aes::cipher::generic_array::GenericArray,
+    aes::cipher::BlockCipher,
+    aes::Aes128,
+};
+
+#[cfg(feature = "openssl")]
+use {
+    openssl::aes::{AesKey, aes_ige},
+    openssl::symm::Mode,
+};
+
 use sha2::Sha256;
 use hmac::{Hmac, Mac, NewMac};
 
@@ -294,6 +310,7 @@ impl Milenage {
         self.opc = xor(&ciphered_opc, &op);
     }
 
+    #[cfg(feature = "aes")]
     fn rijndael_encrypt(&self, input: &[u8; 16]) -> [u8; 16] {
         use crate::aes::cipher::NewBlockCipher;
 
@@ -303,6 +320,17 @@ impl Milenage {
         cipher.encrypt_block(&mut block);
         let mut output = [0u8; 16];
         output.copy_from_slice(&block);
+
+        output
+    }
+
+    #[cfg(feature = "openssl")]
+    fn rijndael_encrypt(&self, input: &[u8; 16]) -> [u8; 16] {
+        let key = AesKey::new_encrypt(&self.k).unwrap();
+        let mut iv = [0;32];
+        let mut output = [0u8; 16];
+        aes_ige(input, &mut output, &key, &mut iv, Mode::Encrypt);
+
         output
     }
 }
@@ -377,7 +405,7 @@ mod tests {
         let (res, _, _, _) = m.f2345(&rand);
         match m.compute_res_star("001", "01", &rand, &res) {
             Ok(res_star) => assert_eq!(res_star, hex!("f236a7417272bfb2d66d4d670733b527")),
-            Err(e) => panic!(e),
+            Err(e) => panic!("{}", e),
         };
     }
 }

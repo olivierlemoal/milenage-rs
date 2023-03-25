@@ -9,7 +9,15 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Build
+    - name: Build default (AES)
       run: cargo build --verbose
-    - name: Run tests
+    - name: Build explicit AES
+      run: cargo build --verbose --no-default-features --features aes
+    - name: Build explicit OpenSSL
+      run: cargo build --verbose --no-default-features --features openssl
+    - name: Run default tests (AES)
       run: cargo test --verbose
+    - name: Run explicit AES tests
+      run: cargo test --verbose --no-default-features --features aes
+    - name: Run explicit OpenSSL tests
+      run: cargo test --verbose --no-default-features --features openssl
