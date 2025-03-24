@@ -253,7 +253,7 @@ impl Milenage {
     /// Computes RESStar from serving network name, RAND and RES as described in
     /// A.4 RES* and XRES* derivation function, TS 33.501.
     pub fn compute_res_star(&mut self, mcc: &str, mnc: &str, rand: &[u8; 16], res: &[u8; 8]) -> Result<[u8; 16], String> {
-        let mut n: String = "".to_string();
+        let mut n: String = mnc.to_string();
         if mnc.len() == 2 {
             n = format!("{}{}", "0", mnc);
         } else if mnc.len() != 3 {
